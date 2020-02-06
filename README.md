@@ -4,18 +4,18 @@ This is used for the project "ZenS" of organization CRI.
 
 Initially, for input we have a dataset of 288 samples (8 types * 36 samples). Each sample has 256 sequence of 6-axis data.
 
-### Workflow of dataset construction 
+### Workflow for dataset construction 
 1. Original dataset collection.
 2. interception: Truncate the data sequence to 6 * 256.
 3. preprocessing: noise reduction, zero mean, normalization, PCA/Whitening.
 4. done: new dataset.
 
-### Workflow of training
+### Workflow for training
 1. import dataset.
 2. train the neuro network.
 3. save model.
 
-### Workflow of application
+### Workflow for application
 1. getting original data sequence.
 2. interception: Truncate the data sequence to 6 * 256.
 3. preprocessing: noise reduction, zero mean, normalization, PCA/Whitening.
@@ -28,4 +28,4 @@ Initially, for input we have a dataset of 288 samples (8 types * 36 samples). Ea
 2. we are accouting for another methodology who is based on **image** data.
 In the methodology, we convert the sequence of numerical data to its image connecting the discreted data. 
 And the problem of Gesture Recognition become an image recognition problem to a certain extent.
-The second Methodology is in the repository GestRecog_usingImage
+The second Methodology is in the repository [GestRecog_usingImage](https://github.com/ZenMoore/GestRecog_usingImage)
