@@ -1,10 +1,10 @@
-import preprocessing
+import preprocessing.core_preprocess as preprocess
 import os
 
-DATA_FILE = "./data_gotten/data.xls"
+DATA_FILE = "data_gotten/data.xls"
 
 while(not os.path.exists(DATA_FILE)):
     pass
 
 with open(DATA_FILE, mode= 'r'):
-    preprocessing.start.run(DATA_FILE)
+    preprocess.run(DATA_FILE)
