@@ -23,6 +23,24 @@ Initially, for input we have a dataset of 288 samples (8 types * 36 samples). Ea
 5. done: return a string representing the type of gesture.
 6. inter-program communication: send the result to Unity3D program.
 
+### Structure
+- /application: added to ZenS as a tool for gesture recognition.
+    - data_gotten: stores the raw data of gestures obtained from the launcher, 
+    in addition to the files being recognized or about to be identified, 
+    there are also historical records (raw data).
+    - results:  there are historical results of recognition.
+- /dataset: for training only. For test, it will be in the /testing.
+    - new: pre-processed dataset.
+    - original: raw dataset.
+- /dataset_collection: organize raw dataset and convert it to pre-processed dataset.
+- /models: trained models.
+- /preprocessing: preprocess the data.
+- /testing: test the models. There will be a dataset for testing only in it.
+- /training: train the models.
+- /.gitignore
+- /README.md
+    
+
 ### Methodology
 1. the methodology above is based on  **numerical** data
 2. we are accouting for another methodology who is based on **image** data.
