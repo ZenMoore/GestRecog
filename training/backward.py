@@ -62,9 +62,11 @@ def get_dataset(path):
             count_sequence += 1
     return [datas, labels]
 
+# todo 给定上一个batch的末位置加一作为所返回batch的首位置
 def next_batch(dataset, pos):
     return np.ones(BATCH_SIZE), np.ones(BATCH_SIZE)
 
+# todo
 def train(dataset):
     x = tf.placeholder(dtype= tf. float32, shape= [None, forward.INPUT_NODE])
     return 0

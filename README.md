@@ -35,6 +35,7 @@ Initially, for input we have a dataset of 288 samples (8 types * 36 samples). Ea
 - /dataset_collection: organize raw dataset and convert it to pre-processed dataset.
 - /models: trained models.
 - /preprocessing: preprocess the data.
+- /reference: papers
 - /testing: test the models. There will be a dataset for testing only in it.
 - /training: train the models.
 - /.gitignore
