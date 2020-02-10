@@ -51,8 +51,8 @@ def convert_to_numpy(data_file):
 
 # 返回Dataset对象，元素为字典项 ('data': (6, 256), 'label': 1)
 def get_dataset(path):
-    datas = np.zeros(shape= [288, 6, 256])
-    labels = np.zeros(shape= [288])
+    datas = np.zeros(shape= [NUM_EXAMPLES, 6, 256])
+    labels = np.zeros(shape= [NUM_EXAMPLES, 8], dtype= np.int)
     count_label = 0 # 访问到了第几个数据集子文件夹
     count_sequence = 0
     dirs = os.listdir(DATASET_PATH)
@@ -64,8 +64,9 @@ def get_dataset(path):
         for file in os.listdir(DATASET_PATH+'{}'.format(dir)):
             datas[count_sequence] = convert_to_numpy(dir+'/'+file)
             count_sequence += 1
-    #todo 糟糕，label的shape错了，它应该也是嵌套矩阵，等李金旺写完代码再做修改
+    # todo 糟糕，label的shape错了，它应该也是嵌套矩阵，等李金旺写完代码再做修改
     dictionary = {'data':datas, 'label':labels} #todo 预感这个字典是可能弄乱数据的祸源
+    # 经过测试，dataset 的每个元素为一个字典条目{'data':(6, 256), 'label':(8)}
     dataset = tf.data.Dataset.from_tensor_slices(dictionary)
     dataset.shuffle(SHUFFLE_BUFFER_SIZE) #todo 是一起打乱吗？
     return dataset
@@ -103,7 +104,7 @@ def train(dataset):
             label_feed = dataset.batch()['label']
             _, loss_value, step = sess.run([train_op, loss, global_step], feed_dict={data: data_feed, label: label_feed})
 
-            if i%10000 == 0:
+            if i%1000 == 0:
                 print("After %d training step(s), loss on training batch is %g ." % (step, loss_value))
                 # 给出global_step参数可以让每个被保存模型的文件名末尾加上训练的轮数，比如model.ckpt=1000表示训练1000论之后的模型
                 saver.save(sess, os.path.join(MODEL_SAVE_PATH, MODEL_NAME), global_step=global_step)
