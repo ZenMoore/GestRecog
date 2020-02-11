@@ -52,7 +52,7 @@ def convert_to_numpy(data_file):
 # 返回Dataset对象，元素为字典项 ('data': (6, 256), 'label': 1)
 def get_dataset(path):
     datas = np.zeros(shape= [NUM_EXAMPLES, 6, 256])
-    labels = np.zeros(shape= [NUM_EXAMPLES, 8], dtype= np.int)
+    labels = np.zeros(shape= [NUM_EXAMPLES, 8], dtype= np.int32)
     count_label = 0 # 访问到了第几个数据集子文件夹
     count_sequence = 0
     dirs = os.listdir(DATASET_PATH)

@@ -6,6 +6,9 @@ INPUT_NODE_HORIZONTAL = 6
 INPUT_NODE_VERTICAL = 256
 OUTPUT_NODE = 8
 
+GRU_HIDDEN_SIZE = 256
+GRU_NUM_STEPS = 8
+
 def get_weight_variable(shape, regularizer):
     weights = tf.get_variable('weights', shape= shape, initializer= tf.truncated_normal_initializer(stddev= 0.1)) # todo 可以尝试更换
 
@@ -48,6 +51,30 @@ def inference(input_tensor, regularizer):
         conv04 = tf.nn.conv2d(conv03, filter_weight, strides= [1, 1, 1, 1], padding='SAME')
 
     with tf.variable_scope('conv_to_recur'):
-        # todo
-        ...
-    return [0,0]
+        bn = tf.layers.batch_normalization(conv04, training= (regularizer != None))
+        bias = tf.nn.bias_add(bn, biases) # dropout 和 bias 的顺序不知道是不是正确
+        actived = tf.nn.tanh(bias)
+        if (regularizer != None) : dropout = tf.nn.dropout(actived, 0.75)
+
+    with tf.variable_scope('gru_layers'):
+
+        # todo 是否需要 reshape 输入
+        # todo 可以使用 dropoutWrapper
+        gru = tf.nn.rnn_cell.GRUCell(GRU_HIDDEN_SIZE, activation= tf.nn.relu)
+        state = gru.zero_state(batch_size= input_tensor.shape[0], dtype= tf.float32)
+        # 使用static_rnn运行num_steps, 但是不能保证遍历全部时间点，可以更换为 dynamic_rnn
+        for i in range(GRU_NUM_STEPS):
+            if i > 0 : tf.get_variable_scope().reuse_variables()
+            gru_output, state = gru(actived[:,i,:], state)
+
+    with tf.variable_scope('fully_connected'):
+        fc_weight = tf.get_variable('fc_weight', [GRU_HIDDEN_SIZE, OUTPUT_NODE], initializer= tf.truncated_normal_initializer(stddev= 0.1))
+
+        if regularizer != None:
+            tf.add_to_collection('losses', regularizer(fc_weight))
+        fc_bias = tf.get_variable('bias', [OUTPUT_NODE], initializer= tf.constant_initializer(0.1))
+
+        logits = tf.matmul(gru_output, fc_weight) + fc_bias
+        y = tf.nn.softmax(logits=logits)
+
+    return y
