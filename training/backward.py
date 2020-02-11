@@ -8,7 +8,6 @@ import itertools
 NUM_EXAMPLES = 8 * 36
 # correspondence: 0:rond, 1:right-croix, 2:left-croix, 3:foudre, 4:..., 5:..., 6:..., 7:...
 
-BATCH_SIZE = 4
 LEARNING_RATE_BASE = 0.8
 LEARNING_RATE_DECAY = 0.99
 MOVING_AVERAGE_DECAY = 0.99
@@ -89,7 +88,7 @@ def convert_to_numpy(data_file):
 # 返回Dataset对象，元素为字典项 ('data': (6, 256), 'label': 1)
 def get_dataset(path):
     datas = np.zeros(shape= [NUM_EXAMPLES, 6, 256])
-    labels = np.zeros(shape= [NUM_EXAMPLES, 8], dtype= np.int32)
+    labels = np.zeros(shape= [NUM_EXAMPLES], dtype= np.int32)
     count_label = 0 # 访问到了第几个数据集子文件夹
     count_sequence = 0
     dirs = os.listdir(DATASET_PATH)
@@ -109,7 +108,7 @@ def get_dataset(path):
     return dataset
 
 def train(dataset):
-    iterator = dataset.make_one_shot_iterator()
+    # iterator = dataset.make_one_shot_iterator()
 
     data = tf.placeholder(dtype= tf.float32, shape= [None, forward.INPUT_NODE_HORIZONTAL, forward.INPUT_NODE_VERTICAL], name= 'data_input')
     label = tf.placeholder(dtype= tf.float32, shape= [None, forward.OUTPUT_NODE], name= 'label_input')

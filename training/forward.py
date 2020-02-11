@@ -2,6 +2,8 @@ import tensorflow as tf
 import numpy as np
 slim = tf.contrib.slim
 
+BATCH_SIZE = 4
+
 INPUT_NODE_HORIZONTAL = 6
 INPUT_NODE_VERTICAL = 256
 OUTPUT_NODE = 8
@@ -19,13 +21,8 @@ def get_weight_variable(shape, regularizer):
 
 # convert (?, 6, 256) to (?, 6, 256, 1)
 def add_one_dimension(input_tensor):
-    output_tensor = np.zeros(shape=[None, INPUT_NODE_HORIZONTAL, INPUT_NODE_VERTICAL, 1])
 
-    for i_batch in range(input_tensor.shape[0]):
-        for i_width in range(input_tensor.shape[1]):
-            for i_height in range(input_tensor.shape[2]):
-                output_tensor[i_batch][i_width][i_height] = np.asarray(input_tensor[i_batch][i_width][i_height])
-    return output_tensor
+    return tf.expand_dims(input_tensor, [-1])
 
 # input_tensor: (?, 6, 256)
 # output: (?,8)
@@ -59,13 +56,19 @@ def inference(input_tensor, regularizer):
     with tf.variable_scope('gru_layers'):
 
         # todo 是否需要 reshape 输入
+
+        print(tf.shape(actived[:,0,:]))
+        tf.reshape(actived[:,0,:], [BATCH_SIZE, -1])
+        print(tf.shape(actived[:, 0, :]))
+
         # todo 可以使用 dropoutWrapper
         gru = tf.nn.rnn_cell.GRUCell(GRU_HIDDEN_SIZE, activation= tf.nn.relu)
-        state = gru.zero_state(batch_size= input_tensor.shape[0], dtype= tf.float32)
+        state = gru.zero_state(batch_size= BATCH_SIZE, dtype= tf.float32)
         # 使用static_rnn运行num_steps, 但是不能保证遍历全部时间点，可以更换为 dynamic_rnn
+        # print(actived[:,0,:].shape)# todo debug
         for i in range(GRU_NUM_STEPS):
             if i > 0 : tf.get_variable_scope().reuse_variables()
-            gru_output, state = gru(actived[:,i,:], state)
+            gru_output, state = gru(actived[:,i,:], state= state) # todo input_shape?
 
     with tf.variable_scope('fully_connected'):
         fc_weight = tf.get_variable('fc_weight', [GRU_HIDDEN_SIZE, OUTPUT_NODE], initializer= tf.truncated_normal_initializer(stddev= 0.1))
