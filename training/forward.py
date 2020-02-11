@@ -19,7 +19,7 @@ def get_weight_variable(shape, regularizer):
 
 # convert (?, 6, 256) to (?, 6, 256, 1)
 def add_one_dimension(input_tensor):
-    output_tensor = np.zeros(shape=[2, 6, 256, 1])
+    output_tensor = np.zeros(shape=[None, INPUT_NODE_HORIZONTAL, INPUT_NODE_VERTICAL, 1])
 
     for i_batch in range(input_tensor.shape[0]):
         for i_width in range(input_tensor.shape[1]):

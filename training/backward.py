@@ -3,6 +3,7 @@ import numpy as np
 import training.forward as forward
 import xlrd
 import os
+import itertools
 
 NUM_EXAMPLES = 8 * 36
 # correspondence: 0:rond, 1:right-croix, 2:left-croix, 3:foudre, 4:..., 5:..., 6:..., 7:...
@@ -22,6 +23,42 @@ DATASET_PATH = '../dataset/new/'
 SHUFFLE_BUFFER_SIZE = 4
 
 batch_pos = 0
+
+def convert_to_one_hot(tensor):
+    a = tensor
+    mydic = set()
+
+    for i in range(288):
+        item = a[i]
+        mydic.add(item)
+    # print(mydic)
+
+    # 把这八个单个[]合起来,为了合并加了一个全是0的
+    c = np.zeros(8)
+    for item in mydic:
+        b = np.zeros(8)
+        b[int(item)] = 1
+        c = np.vstack((c, b))
+    # print(c)
+
+    # 删去第一个全是0的
+    index = [0]  # 最后一个的索引,因为最后一个是0
+    c = np.array(list(itertools.compress(c, [i not in index for i in range(len(c))])))
+    # print(c)
+
+    # 每个重复36次
+    e = np.zeros(8)
+    for array in c:
+        # print(array)
+        d = np.tile(array, (36, 1))  # 重复36次
+        e = np.vstack((e, d))
+    # print(d)
+
+    # 删去第一个空的
+    index = [0]  # 最后一个的索引
+    e = np.array(list(itertools.compress(e, [i not in index for i in range(len(e))])))
+    # print(e)
+    return e
 
 # 将存储数据的.xls文件转为(6, 256)手势序列numpy矩阵
 def convert_to_numpy(data_file):
@@ -64,7 +101,7 @@ def get_dataset(path):
         for file in os.listdir(DATASET_PATH+'{}'.format(dir)):
             datas[count_sequence] = convert_to_numpy(dir+'/'+file)
             count_sequence += 1
-    # todo 糟糕，label的shape错了，它应该也是嵌套矩阵，等李金旺写完代码再做修改
+    labels = convert_to_one_hot(labels)
     dictionary = {'data':datas, 'label':labels} #todo 预感这个字典是可能弄乱数据的祸源
     # 经过测试，dataset 的每个元素为一个字典条目{'data':(6, 256), 'label':(8)}
     dataset = tf.data.Dataset.from_tensor_slices(dictionary)
