@@ -21,8 +21,6 @@ DATASET_PATH = '../dataset/new/'
 
 SHUFFLE_BUFFER_SIZE = 4
 
-batch_pos = 0
-
 def convert_to_one_hot(tensor):
     a = tensor
     mydic = set()
@@ -85,9 +83,8 @@ def convert_to_numpy(data_file):
     data = np.array(list_values)
     return data
 
-# 返回Dataset对象，元素为字典项 ('data': (6, 256), 'label': 1)
 def get_dataset(path):
-    datas = np.zeros(shape= [NUM_EXAMPLES, 6, 256])
+    datas = np.zeros(shape= [NUM_EXAMPLES, 6, 256], dtype= np.float32)
     labels = np.zeros(shape= [NUM_EXAMPLES], dtype= np.int32)
     count_label = 0 # 访问到了第几个数据集子文件夹
     count_sequence = 0
@@ -101,27 +98,37 @@ def get_dataset(path):
             datas[count_sequence] = convert_to_numpy(dir+'/'+file)
             count_sequence += 1
     labels = convert_to_one_hot(labels)
-    dictionary = {'data':datas, 'label':labels} #todo 预感这个字典是可能弄乱数据的祸源
-    # 经过测试，dataset 的每个元素为一个字典条目{'data':(6, 256), 'label':(8)}
-    dataset = tf.data.Dataset.from_tensor_slices(dictionary)
-    dataset.shuffle(SHUFFLE_BUFFER_SIZE) #todo 是一起打乱吗？
+    tuple = (datas, labels)
+    dataset = tf.data.Dataset.from_tensor_slices(tuple)
+    dataset.shuffle(SHUFFLE_BUFFER_SIZE)
     return dataset
 
+def next_batch(dataset, sess):
+    this_batch = dataset.batch(forward.BATCH_SIZE) #todo 能保证返回的batch能够连续遍历吗？
+    iterator = this_batch.make_one_shot_iterator()
+
+    a, b = iterator.get_next()
+    data_list = sess.run(a)
+    label_list = (sess.run(b))
+
+    return data_list, label_list
+
 def train(dataset):
-    # iterator = dataset.make_one_shot_iterator()
+    # iterator = dataset.make_initializable_iterator()
 
     data = tf.placeholder(dtype= tf.float32, shape= [None, forward.INPUT_NODE_HORIZONTAL, forward.INPUT_NODE_VERTICAL], name= 'data_input')
     label = tf.placeholder(dtype= tf.float32, shape= [None, forward.OUTPUT_NODE], name= 'label_input')
 
     regularizer = tf.contrib.layers.l1_regularizer(REGULARIZATION_RATE)# todo 可以修改l1范数正则为l2范数
-    y = forward.inference(data, regularizer)
+    y_axis = forward.inference(data, regularizer)
+    y = tf.reduce_mean(y_axis, 1)
     global_step = tf.Variable(0, trainable= False)
 
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits= y, labels= tf.argmax(label, 1))
     cross_entropy_mean = tf.reduce_mean(cross_entropy)# todo 可以尝试其他损失函数
     loss = cross_entropy_mean + tf.add_n(tf.get_collection('losses'))
 
-    learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, global_step, NUM_EXAMPLES/BATCH_SIZE, LEARNING_RATE_DECAY)# todo 可以尝试更换衰减模型
+    learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, global_step, NUM_EXAMPLES/forward.BATCH_SIZE, LEARNING_RATE_DECAY)# todo 可以尝试更换衰减模型
 
     variable_average = tf.train.ExponentialMovingAverage(MOVING_AVERAGE_DECAY, global_step)# todo 可以尝试更换滑动平均模型
     variable_average_op = variable_average.apply(tf.trainable_variables())
@@ -132,12 +139,15 @@ def train(dataset):
 
     saver = tf.train.Saver()
 
-    with tf.Session() as sess:
+
+
+    with tf.Session(config= tf.ConfigProto(log_device_placement= False, allow_soft_placement=True)) as sess:
+        # with tf.device("/gpu:0"):
         tf.global_variables_initializer().run()
 
         for i in range(TRAIN_STEPS):
-            data_feed = dataset.batch()['data'] # todo 怎么分离batch后的字典项
-            label_feed = dataset.batch()['label']
+            data_feed, label_feed = next_batch(dataset, sess)
+
             _, loss_value, step = sess.run([train_op, loss, global_step], feed_dict={data: data_feed, label: label_feed})
 
             if i%1000 == 0:
