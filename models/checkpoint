@@ -1,2 +1,6 @@
-model_checkpoint_path: "gr_model.ckpt-1"
-all_model_checkpoint_paths: "gr_model.ckpt-1"
+model_checkpoint_path: "gr_model.ckpt-17001"
+all_model_checkpoint_paths: "gr_model.ckpt-13001"
+all_model_checkpoint_paths: "gr_model.ckpt-14001"
+all_model_checkpoint_paths: "gr_model.ckpt-15001"
+all_model_checkpoint_paths: "gr_model.ckpt-16001"
+all_model_checkpoint_paths: "gr_model.ckpt-17001"

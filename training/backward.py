@@ -4,6 +4,7 @@ import training.forward as forward
 import xlrd
 import os
 import itertools
+from random import shuffle
 
 NUM_EXAMPLES = 8 * 36
 # correspondence: 0:rond, 1:right-croix, 2:left-croix, 3:foudre, 4:..., 5:..., 6:..., 7:...
@@ -20,6 +21,8 @@ MODEL_NAME = 'gr_model.ckpt'
 DATASET_PATH = '../dataset/new/'
 
 SHUFFLE_BUFFER_SIZE = 4
+
+batch_pos = 0
 
 def convert_to_one_hot(tensor):
     a = tensor
@@ -83,12 +86,15 @@ def convert_to_numpy(data_file):
     data = np.array(list_values)
     return data
 
+# 返回的dataset是一个[(data, label), (data, label), (data, label), (data, label)...]
 def get_dataset(path):
     datas = np.zeros(shape= [NUM_EXAMPLES, 6, 256], dtype= np.float32)
     labels = np.zeros(shape= [NUM_EXAMPLES], dtype= np.int32)
     count_label = 0 # 访问到了第几个数据集子文件夹
     count_sequence = 0
     dirs = os.listdir(DATASET_PATH)
+
+    dataset = [] # list of tuples
     for dir in dirs:
         # 赋值 36 个 labels
         labels[count_label * 36 : (count_label + 1) * 36] = np.ones(shape= [36]) * count_label
@@ -98,18 +104,27 @@ def get_dataset(path):
             datas[count_sequence] = convert_to_numpy(dir+'/'+file)
             count_sequence += 1
     labels = convert_to_one_hot(labels)
-    tuple = (datas, labels)
-    dataset = tf.data.Dataset.from_tensor_slices(tuple)
-    dataset.shuffle(SHUFFLE_BUFFER_SIZE)
+    for i in range(288):
+        dataset.append((datas[i], labels[i]))
+    shuffle(dataset)
     return dataset
 
-def next_batch(dataset, sess):
-    this_batch = dataset.batch(forward.BATCH_SIZE) #todo 能保证返回的batch能够连续遍历吗？
-    iterator = this_batch.make_one_shot_iterator()
+def next_batch(dataset):
+    global batch_pos
 
-    a, b = iterator.get_next()
-    data_list = sess.run(a)
-    label_list = (sess.run(b))
+    data_list = []
+    label_list = []
+
+    for i in range(batch_pos, batch_pos + forward.BATCH_SIZE):
+        data_list.append(dataset[i][0])
+        label_list.append(dataset[i][1])
+
+    batch_pos += forward.BATCH_SIZE
+    if batch_pos >= forward.BATCH_SIZE:
+        batch_pos = 0
+
+    assert len(data_list) != 0
+    assert len(data_list) != 0
 
     return data_list, label_list
 
@@ -139,14 +154,12 @@ def train(dataset):
 
     saver = tf.train.Saver()
 
-
-
     with tf.Session(config= tf.ConfigProto(log_device_placement= False, allow_soft_placement=True)) as sess:
         # with tf.device("/gpu:0"):
         tf.global_variables_initializer().run()
 
         for i in range(TRAIN_STEPS):
-            data_feed, label_feed = next_batch(dataset, sess)
+            data_feed, label_feed = next_batch(dataset)
 
             _, loss_value, step = sess.run([train_op, loss, global_step], feed_dict={data: data_feed, label: label_feed})
 
