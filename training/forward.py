@@ -38,38 +38,38 @@ def inference(input_tensor, regularizer):
         relu01 = tf.nn.relu(tf.nn.bias_add(conv01,conv01_biases))
 
 
-    with tf.name_scope('layer_pool01'):
-        pool01 = tf.nn.max_pool(relu01, ksize=[1, 1, 1, 1], strides=[1, 1, 1, 1], padding='VALID')
+    # with tf.name_scope('layer_pool01'):
+    #     pool01 = tf.nn.max_pool(relu01, ksize=[1, 1, 1, 1], strides=[1, 1, 1, 1], padding='VALID')
 
     with tf.variable_scope('layer_conv02'):
         conv02_filter_weight = tf.get_variable('filter_weight', [1, 3, 12, 24], initializer= tf.truncated_normal_initializer(stddev= 0.1)) # todo 可以尝试更换
         conv02_biases = tf.get_variable('bias', [24], initializer=tf.constant_initializer(0.0))
-        conv02 = tf.nn.conv2d(pool01, conv02_filter_weight, strides= [1, 1, 2, 1], padding='SAME')
+        conv02 = tf.nn.conv2d(relu01, conv02_filter_weight, strides= [1, 1, 2, 1], padding='SAME')
         relu02 = tf.nn.relu(tf.nn.bias_add(conv02,conv02_biases))
 
-    with tf.name_scope('layer_pool02'):
-        pool02 = tf.nn.max_pool(relu02, ksize=[1, 1, 1, 1], strides=[1, 1, 1, 1], padding='VALID')
+    # with tf.name_scope('layer_pool02'):
+    #     pool02 = tf.nn.max_pool(relu02, ksize=[1, 1, 1, 1], strides=[1, 1, 1, 1], padding='VALID')
 
     with tf.variable_scope('layer_conv03'):
         conv03_filter_weight = tf.get_variable('filter_weight', [1, 3, 24, 48], initializer= tf.truncated_normal_initializer(stddev= 0.1)) # todo 可以尝试更换
         conv03_biases = tf.get_variable('bias', [48], initializer=tf.constant_initializer(0.0))
-        conv03 = tf.nn.conv2d(pool02, conv03_filter_weight, strides= [1, 1, 2, 1], padding='SAME')
+        conv03 = tf.nn.conv2d(relu02, conv03_filter_weight, strides= [1, 1, 2, 1], padding='SAME')
         relu03 = tf.nn.relu(tf.nn.bias_add(conv03,conv03_biases))
 
-    with tf.name_scope('layer_pool03'):
-        pool03 = tf.nn.max_pool(relu03, ksize=[1, 1, 1, 1], strides=[1, 1, 1, 1], padding='VALID')
+    # with tf.name_scope('layer_pool03'):
+    #     pool03 = tf.nn.max_pool(relu03, ksize=[1, 1, 1, 1], strides=[1, 1, 1, 1], padding='VALID')
 
     with tf.variable_scope('layer_conv04'):
         conv04_filter_weight = tf.get_variable('filter_weight', [1, 3, 48, 48], initializer= tf.truncated_normal_initializer(stddev= 0.1)) # todo 可以尝试更换
         conv04_biases = tf.get_variable('bias', [48], initializer=tf.constant_initializer(0.0))
-        conv04 = tf.nn.conv2d(pool03, conv04_filter_weight, strides= [1, 1, 1, 1], padding='SAME')
+        conv04 = tf.nn.conv2d(relu03, conv04_filter_weight, strides= [1, 1, 1, 1], padding='SAME')
         relu04 = tf.nn.relu(tf.nn.bias_add(conv04,conv04_biases))
 
-    with tf.name_scope('layer_pool04'):
-        pool04 = tf.nn.max_pool(relu04, ksize=[1, 1, 1, 1], strides=[1, 1, 1, 1], padding='VALID')
+    # with tf.name_scope('layer_pool04'):
+    #     pool04 = tf.nn.max_pool(relu04, ksize=[1, 1, 1, 1], strides=[1, 1, 1, 1], padding='VALID')
 
     with tf.variable_scope('conv_to_recur'):
-        bn = tf.layers.batch_normalization(pool04, training= (regularizer != None))
+        bn = tf.layers.batch_normalization(relu04, training= (regularizer != None))
         bias = tf.nn.bias_add(bn, biases) # dropout 和 bias 的顺序不知道是不是正确
         actived = tf.nn.tanh(bias)
         if (regularizer != None) : dropout = tf.nn.dropout(actived, 0.75)
