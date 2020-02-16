@@ -65,3 +65,9 @@ def run(data_file):
     data = normalization(data)
     # data = whitening(data)
     return data
+
+def run_without_file(data):
+    data = noise_reduction(data)
+    data = zero_mean(data)
+    data = normalization(data)
+    return data

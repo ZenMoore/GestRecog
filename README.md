@@ -16,12 +16,11 @@ Initially, for input we have a dataset of 288 samples (8 types * 36 samples). Ea
 3. save model.
 
 ### Workflow for application
-1. getting original data sequence.
-2. interception: Truncate the data sequence to 6 * 256.
-3. preprocessing: noise reduction, zero mean, normalization, PCA/Whitening.
-4. forward propagation.
-5. done: return a string representing the type of gesture.
-6. inter-program communication: send the result to Unity3D program.
+1. getting original data sequence and intercept it simultaneously.
+2. preprocessing: noise reduction, zero mean, normalization, PCA/Whitening.
+3. forward propagation.
+4. done: return a string representing the type of gesture.
+5. inter-program communication: send the result to Unity3D program.
 
 ### Structure
 - /application: added to ZenS as a tool for gesture recognition.

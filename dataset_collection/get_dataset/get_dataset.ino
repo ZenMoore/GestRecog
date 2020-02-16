@@ -4,8 +4,8 @@
 
 #include <SoftwareSerial.h>
 
-#define GEST_RX_PIN 9
-#define GEST_TX_PIN 10
+#define GEST_RX_PIN 19
+#define GEST_TX_PIN 18
 #define BUTTON 13
 
 float data[6][2];
@@ -13,36 +13,36 @@ unsigned char Re_buf[11], counter = 0;
 unsigned char sign = 0;
 float a[3], angle[3];
 
-SoftwareSerial sserial = SoftwareSerial(GEST_TX_PIN, GEST_RX_PIN);
+//SoftwareSerial Serial1 = SoftwareSerial(GEST_TX_PIN, GEST_RX_PIN);
 
 void setup() {
   Serial.begin(9600);
 
   Serial.println("initializing...");
 
-  sserial.begin(115200);
+  Serial1.begin(115200);
   Serial.println("baud rate：115200");
 
   byte baud[3] = {0xFF, 0xAA, 0x63};
   for (int i = 0; i < 3; i++) {
-    sserial.write(baud[i]);
+    Serial1.write(baud[i]);
   }
   Serial.println("baud rate 115200, return rate 100Hz.");
-  sserial.begin(115200);
+  Serial1.begin(115200);
 
   byte zzero[3] = {0xFF, 0xAA, 0x52};
   for (int i = 0; i < 3; i++) {
-    sserial.write(zzero[i]);
+    Serial1.write(zzero[i]);
   } for (int i = 0; i < 3; i++) {
-    sserial.write(zzero[i]);
+    Serial1.write(zzero[i]);
   }
   Serial.println("z-zeroing");
 
   byte acheck[3] = {0xFF, 0xAA, 0x67};
   for (int i = 0; i < 3; i++) {
-    sserial.write(acheck[i]);
+    Serial1.write(acheck[i]);
   } for (int i = 0; i < 3; i++) {
-    sserial.write(acheck[i]);
+    Serial1.write(acheck[i]);
   }
   Serial.println("A-calibration");
 
@@ -92,8 +92,8 @@ void initial() {
 }
 
 void detect_and_store() {
-  while (sserial.available() && digitalRead(BUTTON) == HIGH) {
-    Re_buf[counter] = (unsigned char)sserial.read();
+  while (Serial1.available() && digitalRead(BUTTON) == HIGH) {
+    Re_buf[counter] = (unsigned char)Serial1.read();
     if (counter == 0 && Re_buf[0] != 0x55) continue; //第0号数据不是帧头
     counter++;
     if (counter == 11)          //接收到11个数据
