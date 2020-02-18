@@ -60,7 +60,7 @@ def convert_to_one_hot(tensor):
     # print(e)
     return e
 
-# 将存储数据的.xls文件转为(6, 256)手势序列numpy矩阵
+# 将存储数据的.xlsx文件转为(6, 256)手势序列numpy矩阵
 def convert_to_numpy(data_file):
     book = xlrd.open_workbook(DATASET_PATH+'{}'.format(data_file))
     # book = xlrd.open_workbook(data_file)
@@ -103,6 +103,8 @@ def get_dataset(path):
         for file in os.listdir(DATASET_PATH+'{}'.format(dir)):
             datas[count_sequence] = convert_to_numpy(dir+'/'+file)
             count_sequence += 1
+
+
     labels = convert_to_one_hot(labels)
     for i in range(288):
         dataset.append((datas[i], labels[i]))

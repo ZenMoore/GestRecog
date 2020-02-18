@@ -1,0 +1,119 @@
+from openpyxl.workbook import Workbook
+import openpyxl
+import xlrd
+import numpy as np
+import os
+import preprocessing.core_preprocess as prep
+
+RAW_PATH = '../dataset/raw/'
+ORIGINAL_PATH = '../dataset/original/'
+NEW_PATH = '../dataset/new/'
+
+
+# 将存储数据的.xlsx文件转为(6, 256)手势序列numpy矩阵
+def convert_to_numpy(data_file):
+    book = xlrd.open_workbook(RAW_PATH+'{}'.format(data_file))
+    # book = xlrd.open_workbook(data_file)
+
+    table = book.sheet_by_index(0)  # 这里是引入第一个sheet，默认是引入第一个，要引入别的可以改那个数字
+
+    # nrows=table.nrows
+    # ncols=table.ncols
+
+    start = 1
+    end = 257  # 这两个数是为了避开标题行，手动避的
+    # rows=start-end
+
+    list_values = []
+    for i in range(1, 7): # 列
+        values = []
+        for x in range(start, end): #行
+            row = table.row_values(x)
+
+            values.append(row[i])
+        list_values.append(values)
+    # print(list_values)
+    data = np.array(list_values)
+    return data
+
+
+# 将存储了(6, ?)数据的表格整理为(6, 256)数据表格并(下方单元格上移)
+# todo Victoire
+def intercept(sheet):
+    num_row = sheet.max_row - 1 # 不算标题行
+    proportion = 0.6 # 尾部产出比例或头部补充比例，因为尾部的无效数据比头部多
+
+    if num_row > 256:
+        devia = num_row - 256
+        down_remove = int(devia * proportion)
+        up_remove = devia - down_remove
+        sheet.delete_rows(2, up_remove)
+        sheet.delete_rows(sheet.max_row - down_remove + 1, down_remove)
+    elif num_row < 256:
+        devia = 256 - num_row
+        up_insert = int(devia * proportion)
+        down_insert = 1 - up_insert
+
+        # 上补
+        sheet.insert_rows(2, up_insert)
+        for i in range(2, up_insert + 2):
+            for j in range(sheet.max_column):
+                sheet.cell(i, j+1).value = sheet.cell(2 + up_insert, j+1).value # 修改单元格数据
+
+        # 下补
+        sheet.insert_rows(sheet.max_row, down_insert)
+        for i in range(sheet.max_row - down_insert, sheet.max_row):
+            for j in range(sheet.max_column):
+                sheet.cell(i, j+1).value = sheet.cell(sheet.max_row, j+1).value # 修改单元格数据
+
+
+# 将原始数据集中的数据进行精简，变成convert_to_numpy能够接受的大小
+# 不新建存储路径，仅修改原有文件
+def trim_xls(raw_path, original_path):
+    dirs = os.listdir(raw_path)
+
+    for dir in dirs:
+        count_sequence = 0
+        for file in os.listdir(raw_path + '{}'.format(dir)):
+            wb = openpyxl.load_workbook(raw_path + dir + '/' + file)
+            sheet = wb.get_sheet_by_name(wb.sheetnames[0])
+            sheet.delete_rows(1, 1) # intro
+            sheet.delete_cols(1, 1) # adress
+            sheet.delete_cols(5, 3) # wx, wy, wz
+            sheet.delete_cols(8, 1) # T
+            intercept(sheet)
+
+            wb.save(original_path + dir + '/' + dir + ' ('  + str(count_sequence) + ').xlsx')  # todo 用不用保存
+            count_sequence += 1
+            wb.close()
+
+
+# 将data写入 NEW_PATH/dir/dir_count_sequencce.xlsx中
+def write_to_new(data, count_sequence, dir):
+    outwb = Workbook()
+    wo = outwb.active
+
+    careerSheet = outwb.create_sheet('sheet1',0)   #创建的sheet
+
+    for colnumber in range(1, 7):
+        for rownumber in range(1,257):
+            careerSheet.cell(row=rownumber,column=colnumber).value =data[colnumber-1][rownumber-1]
+
+    outwb.save(NEW_PATH + dir + '/' + dir + '_'  + str(count_sequence) + '.xlsx')
+
+# 从原始xlsx数据集中读取数据，经过表格编辑、截取、预处理后，写到新数据集中
+if __name__ == '__main__':
+
+    trim_xls(RAW_PATH, ORIGINAL_PATH)
+
+    datas = np.zeros(shape= [None, 6, 256], dtype= np.float32)
+    dirs = os.listdir(ORIGINAL_PATH)
+
+    for dir in dirs:
+        count_sequence = 0
+        for file in os.listdir(RAW_PATH+'{}'.format(dir)):
+            datas[count_sequence] = convert_to_numpy(dir+'/'+file)
+            datas[count_sequence] = prep.run_without_file(datas[count_sequence])
+            write_to_new(datas[count_sequence], count_sequence, dir)
+            count_sequence += 1
+

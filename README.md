@@ -5,9 +5,9 @@ This is used for the project "ZenS" of organization CRI.
 Initially, for input we have a dataset of 288 samples (8 types * 36 samples). Each sample has 256 sequence of 6-axis data.
 
 ### Workflow for dataset construction 
-1. Original dataset collection.
-2. interception: Truncate the data sequence to 6 * 256.
-3. preprocessing: noise reduction, zero mean, normalization, PCA/Whitening.
+1. raw dataset collection.
+2. trim (Raw->Original): Truncate the data sequence to 6 * 256.
+3. preprocessing(Original->New): noise reduction, zero mean, normalization, PCA/Whitening.
 4. done: new dataset.
 
 ### Workflow for training
