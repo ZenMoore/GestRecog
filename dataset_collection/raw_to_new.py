@@ -9,10 +9,11 @@ RAW_PATH = '../dataset/raw/'
 ORIGINAL_PATH = '../dataset/original/'
 NEW_PATH = '../dataset/new/'
 
+SEQUENCE_LEN = 256
 
 # 将存储数据的.xlsx文件转为(6, 256)手势序列numpy矩阵
 def convert_to_numpy(data_file):
-    book = xlrd.open_workbook(RAW_PATH+'{}'.format(data_file))
+    book = xlrd.open_workbook(ORIGINAL_PATH+'{}'.format(data_file))
     # book = xlrd.open_workbook(data_file)
 
     table = book.sheet_by_index(0)  # 这里是引入第一个sheet，默认是引入第一个，要引入别的可以改那个数字
@@ -21,7 +22,7 @@ def convert_to_numpy(data_file):
     # ncols=table.ncols
 
     start = 1
-    end = 257  # 这两个数是为了避开标题行，手动避的
+    end = SEQUENCE_LEN + start  # 这两个数是为了避开标题行，手动避的
     # rows=start-end
 
     list_values = []
@@ -36,35 +37,45 @@ def convert_to_numpy(data_file):
     data = np.array(list_values)
     return data
 
-
 # 将存储了(6, ?)数据的表格整理为(6, 256)数据表格并(下方单元格上移)
-# todo Victoire
+# todo @author Victoire 连线均分算法
 def intercept(sheet):
     num_row = sheet.max_row - 1 # 不算标题行
-    proportion = 0.6 # 尾部产出比例或头部补充比例，因为尾部的无效数据比头部多
+    proportion = 0.6  # 尾部删除比例或头部补充比例，因为尾部的无效数据比头部多，所以多删除一点
 
-    if num_row > 256:
-        devia = num_row - 256
+    # SEQUENCE_LEN = 256, 当数据的行数比256大的时候
+    # 首尾删除数据，头部删除若干行，尾部删除若干行
+    # 但是头部删除的行数和尾部删除的行数不一致，其服从 proportion=0.6的比例关系
+    if num_row > SEQUENCE_LEN:
+        # 分别计算首尾删除的行数
+        devia = num_row - SEQUENCE_LEN
         down_remove = int(devia * proportion)
         up_remove = devia - down_remove
+
+        # 掐头去尾
         sheet.delete_rows(2, up_remove)
         sheet.delete_rows(sheet.max_row - down_remove + 1, down_remove)
-    elif num_row < 256:
-        devia = 256 - num_row
-        up_insert = int(devia * proportion)
-        down_insert = 1 - up_insert
 
-        # 上补
+    # SEQUENCE_LEN = 256, 当数据的行数比256小的时候
+    # 首尾补充数据，头部用第一行复制若干行，尾部用最后一行复制若干行
+    # 但是尾部补充的行数和头部补充的行数不一致，其服从 proportion=0.6的比例关系
+    elif num_row < SEQUENCE_LEN:
+        # 分别计算首尾补充的行数
+        devia = SEQUENCE_LEN - num_row
+        up_insert = int(devia * proportion)
+        down_insert = devia - up_insert
+
+        # 通过复制第一行补充头部
         sheet.insert_rows(2, up_insert)
         for i in range(2, up_insert + 2):
             for j in range(sheet.max_column):
-                sheet.cell(i, j+1).value = sheet.cell(2 + up_insert, j+1).value # 修改单元格数据
+                sheet.cell(i, j+1).value = sheet.cell(2 + up_insert, j+1).value # 复制单元格数据
 
-        # 下补
+        # 通过复制最后一行补充尾部
         sheet.insert_rows(sheet.max_row, down_insert)
         for i in range(sheet.max_row - down_insert, sheet.max_row):
             for j in range(sheet.max_column):
-                sheet.cell(i, j+1).value = sheet.cell(sheet.max_row, j+1).value # 修改单元格数据
+                sheet.cell(i, j+1).value = sheet.cell(sheet.max_row, j+1).value # 复制单元格数据
 
 
 # 将原始数据集中的数据进行精简，变成convert_to_numpy能够接受的大小
@@ -82,8 +93,7 @@ def trim_xls(raw_path, original_path):
             sheet.delete_cols(5, 3) # wx, wy, wz
             sheet.delete_cols(8, 1) # T
             intercept(sheet)
-
-            wb.save(original_path + dir + '/' + dir + ' ('  + str(count_sequence) + ').xlsx')  # todo 用不用保存
+            wb.save(original_path + dir + '/' + str(count_sequence) + '_' + file)
             count_sequence += 1
             wb.close()
 
@@ -96,7 +106,7 @@ def write_to_new(data, count_sequence, dir):
     careerSheet = outwb.create_sheet('sheet1',0)   #创建的sheet
 
     for colnumber in range(1, 7):
-        for rownumber in range(1,257):
+        for rownumber in range(1, SEQUENCE_LEN + 1):
             careerSheet.cell(row=rownumber,column=colnumber).value =data[colnumber-1][rownumber-1]
 
     outwb.save(NEW_PATH + dir + '/' + dir + '_'  + str(count_sequence) + '.xlsx')
@@ -106,7 +116,7 @@ if __name__ == '__main__':
 
     trim_xls(RAW_PATH, ORIGINAL_PATH)
 
-    datas = np.zeros(shape= [None, 6, 256], dtype= np.float32)
+    datas = np.zeros(shape= [50, 6, 256], dtype= np.float32)
     dirs = os.listdir(ORIGINAL_PATH)
 
     for dir in dirs:

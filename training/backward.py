@@ -6,7 +6,7 @@ import os
 import itertools
 from random import shuffle
 
-NUM_EXAMPLES = 8 * 36
+NUM_EXAMPLES = forward.OUTPUT_NODE * 40
 # correspondence: 0:rond, 1:right-croix, 2:left-croix, 3:foudre, 4:..., 5:..., 6:..., 7:...
 
 LEARNING_RATE_BASE = 0.8
@@ -28,15 +28,15 @@ def convert_to_one_hot(tensor):
     a = tensor
     mydic = set()
 
-    for i in range(288):
+    for i in range(NUM_EXAMPLES):
         item = a[i]
         mydic.add(item)
     # print(mydic)
 
     # 把这八个单个[]合起来,为了合并加了一个全是0的
-    c = np.zeros(8)
+    c = np.zeros(forward.OUTPUT_NODE)
     for item in mydic:
-        b = np.zeros(8)
+        b = np.zeros(forward.OUTPUT_NODE)
         b[int(item)] = 1
         c = np.vstack((c, b))
     # print(c)
@@ -47,10 +47,10 @@ def convert_to_one_hot(tensor):
     # print(c)
 
     # 每个重复36次
-    e = np.zeros(8)
+    e = np.zeros(forward.OUTPUT_NODE)
     for array in c:
         # print(array)
-        d = np.tile(array, (36, 1))  # 重复36次
+        d = np.tile(array, (NUM_EXAMPLES/forward.OUTPUT_NODE, 1))  # 重复36次
         e = np.vstack((e, d))
     # print(d)
 
@@ -71,7 +71,7 @@ def convert_to_numpy(data_file):
     # ncols=table.ncols
 
     start = 1
-    end = 257  # 这两个数是为了避开标题行，手动避的
+    end = forward.INPUT_NODE_VERTICAL + start  # 这两个数是为了避开标题行，手动避的
     # rows=start-end
 
     list_values = []
@@ -88,7 +88,7 @@ def convert_to_numpy(data_file):
 
 # 返回的dataset是一个[(data, label), (data, label), (data, label), (data, label)...]
 def get_dataset(path):
-    datas = np.zeros(shape= [NUM_EXAMPLES, 6, 256], dtype= np.float32)
+    datas = np.zeros(shape= [NUM_EXAMPLES, forward.INPUT_NODE_HORIZONTAL, forward.INPUT_NODE_VERTICAL], dtype= np.float32)
     labels = np.zeros(shape= [NUM_EXAMPLES], dtype= np.int32)
     count_label = 0 # 访问到了第几个数据集子文件夹
     count_sequence = 0
@@ -97,7 +97,7 @@ def get_dataset(path):
     dataset = [] # list of tuples
     for dir in dirs:
         # 赋值 36 个 labels
-        labels[count_label * 36 : (count_label + 1) * 36] = np.ones(shape= [36]) * count_label
+        labels[count_label * NUM_EXAMPLES/forward.OUTPUT_NODE : (count_label + 1) * NUM_EXAMPLES/forward.OUTPUT_NODE] = np.ones(shape= [NUM_EXAMPLES/forward.OUTPUT_NODE]) * count_label
         count_label += 1
         # 赋值 36 个手势序列
         for file in os.listdir(DATASET_PATH+'{}'.format(dir)):
@@ -106,7 +106,7 @@ def get_dataset(path):
 
 
     labels = convert_to_one_hot(labels)
-    for i in range(288):
+    for i in range(NUM_EXAMPLES):
         dataset.append((datas[i], labels[i]))
     shuffle(dataset)
     return dataset
