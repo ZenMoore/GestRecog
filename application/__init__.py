@@ -1,12 +1,11 @@
 import preprocessing.core_preprocess as preprocess
 # import os
-import application.receive_from_host as reveiver
+# import application.receive_from_host as receiver
+import application.receive_from_xlsx as receiver
 import numpy as np
 import application.inference as inf
 import application.send_to_demo as messenger
 
-# DATA_FILE = "data_gotten/data.xls"
-#
 # while(not os.path.exists(DATA_FILE)):
 #     pass
 #
@@ -14,11 +13,11 @@ import application.send_to_demo as messenger
 #     preprocess.run(DATA_FILE)
 #
 
-model_path = "../models/gr_model.ckpt-22001"
+model_path = "./model/gr_model.ckpt-14001"
 
-type_map = {0: 'round',
-            1: 'croix',
-            2: 'right_to_left',
+type_map = {0: 'right_to_left',
+            1: 'round',
+            2: 'croix',
             3: 'down_to_up',
             4: 'thunder',
             5: 'infinity',
@@ -34,15 +33,19 @@ def decode(raw):
 if __name__ == '__main__':
 
     # 从 C-Python 通信中获取[6, 256]数据并解码
-    data = decode(reveiver.get_mmap_info())
+    # data = decode(reveiver.get_mmap_info())
+
+    # 从 .xlsx 文件中获取[6, 256]numpy数据
+    data = receiver.get_info()
 
     # 数据预处理
     data = preprocess.run_without_file(data)
 
-    if data == -1:
-        print("decode failed.")
-    else:
-        if messenger.send(type_map.get(inf.run(data, model_path))):
-            print("Gesture type is sent to Unity3D.")
-        else:
-            print("Gesture type send failed.")
+    # if data == -1:
+    #     print("decode failed.")
+    # else:
+    #     if messenger.send(type_map.get(inf.run(data, model_path))):
+    #         print("Gesture type is sent to Unity3D.")
+    #     else:
+    #         print("Gesture type send failed.")
+    print(type_map.get(inf.run(data, model_path)))

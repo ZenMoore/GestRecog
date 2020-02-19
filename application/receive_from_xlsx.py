@@ -1,13 +1,15 @@
+import numpy as np
 from openpyxl.workbook import Workbook
 import openpyxl
 import xlrd
 import numpy as np
+import time
 import os
 import preprocessing.core_preprocess as prep
 
-RAW_PATH = '../dataset/raw/'
-ORIGINAL_PATH = '../dataset/original/'
-NEW_PATH = '../dataset/new/'
+ORIGINAL_PATH = './data_gotten/'
+DATA_FILE = 'data.xlsx'
+
 
 SEQUENCE_LEN = 256
 
@@ -21,12 +23,12 @@ def convert_to_numpy(data_file):
     # nrows=table.nrows
     # ncols=table.ncols
 
-    start = 1
+    start = 0
     end = SEQUENCE_LEN + start  # 这两个数是为了避开标题行，手动避的
     # rows=start-end
 
     list_values = []
-    for i in range(1, 7): # 列
+    for i in range(6): # 列
         values = []
         try:
             for x in range(start, end): #行
@@ -45,7 +47,7 @@ def convert_to_numpy(data_file):
 # 将存储了(6, ?)数据的表格整理为(6, 256)数据表格并(下方单元格上移)
 # todo @author Victoire 连线均分算法
 def intercept(sheet):
-    num_row = sheet.max_row - 1 # 不算标题行
+    num_row = sheet.max_row # 不算标题行
     proportion = 0.6  # 尾部删除比例或头部补充比例，因为尾部的无效数据比头部多，所以多删除一点
 
     # SEQUENCE_LEN = 256, 当数据的行数比256大的时候
@@ -59,7 +61,7 @@ def intercept(sheet):
 
         # 掐头去尾
         if up_remove != 0:
-            sheet.delete_rows(2, up_remove)
+            sheet.delete_rows(1, up_remove)
         if down_remove != 0:
             sheet.delete_rows(sheet.max_row - down_remove + 1, down_remove)
 
@@ -74,8 +76,8 @@ def intercept(sheet):
 
         # 通过复制第一行补充头部
         if up_insert != 0:
-            sheet.insert_rows(2, up_insert)
-            for i in range(2, up_insert + 2):
+            sheet.insert_rows(1, up_insert)
+            for i in range(1, up_insert + 1):
                 for j in range(sheet.max_column):
                     sheet.cell(i, j+1).value = sheet.cell(2 + up_insert, j+1).value # 复制单元格数据
 
@@ -87,60 +89,17 @@ def intercept(sheet):
                  sheet.cell(i, j+1).value = sheet.cell(sheet.max_row, j+1).value # 复制单元格数据
 
 
-# 将原始数据集中的数据进行精简，变成convert_to_numpy能够接受的大小
-# 不新建存储路径，仅修改原有文件
-def trim_xls(raw_path, original_path):
-    dirs = os.listdir(raw_path)
+def clear_invalid(sheet):
+    sheet.delete_rows(sheet.max_row, 1)
 
-    for dir in dirs:
-        count_sequence = 0
-        for file in os.listdir(raw_path + '{}'.format(dir)):
-            wb = openpyxl.load_workbook(raw_path + dir + '/' + file)
-            sheet = wb.get_sheet_by_name(wb.sheetnames[0])
-            sheet.delete_rows(1, 1) # intro
-            sheet.delete_cols(1, 1) # adress
-            sheet.delete_cols(5, 3) # wx, wy, wz
-            sheet.delete_cols(8, 1) # T
-            intercept(sheet)
-            wb.save(original_path + dir + '/' + str(count_sequence) + '_' + dir + '.xlsx')
-
-            # 下面代码发现运行途中，raw的表格中有几个存在空tuple，导致一系列问题
-            # if count_sequence == 23:
-            #     print('error in raw: ' + dir + '/' + file)
-            count_sequence += 1
-            wb.close()
-
-
-# 将data写入 NEW_PATH/dir/dir_count_sequencce.xlsx中
-def write_to_new(data, count_sequence, dir):
-    outwb = Workbook()
-    wo = outwb.active
-
-    careerSheet = outwb.create_sheet('sheet1',0)   #创建的sheet
-
-    for colnumber in range(1, 7):
-        for rownumber in range(1, SEQUENCE_LEN + 1):
-            careerSheet.cell(row=rownumber,column=colnumber).value =data[colnumber-1][rownumber-1]
-
-    outwb.save(NEW_PATH + dir + '/' + dir + '_'  + str(count_sequence) + '.xlsx')
-
-# 从原始xlsx数据集中读取数据，经过表格编辑、截取、预处理后，写到新数据集中
-if __name__ == '__main__':
-
-    trim_xls(RAW_PATH, ORIGINAL_PATH)
-
-    datas = np.zeros(shape= [50, 6, 256], dtype= np.float32)
-    dirs = os.listdir(ORIGINAL_PATH)
-
-    try:
-        for dir in dirs:
-            count_sequence = 0
-            for file in os.listdir(ORIGINAL_PATH+'{}'.format(dir)):
-                datas[count_sequence] = convert_to_numpy(dir+'/'+file)
-                datas[count_sequence] = prep.run_without_file(datas[count_sequence])
-                write_to_new(datas[count_sequence], count_sequence, dir)
-                count_sequence += 1
-    except ValueError:
-
-        # 遇到问题文件，先返回在 original 中的对应文件，然后根据文件名去 trim_xlsx 配置调试代码
-        print('error in original: '+ dir + "/" + file)
+# 返回 (6, 256) numpy 格式数据
+def get_info():
+    time.sleep(3) # 等待 data_gotten 获取数据结束
+    wb = openpyxl.load_workbook(ORIGINAL_PATH + DATA_FILE)
+    sheet = wb.get_sheet_by_name(wb.sheetnames[0])
+    clear_invalid(sheet)
+    intercept(sheet)
+    wb.save(ORIGINAL_PATH + DATA_FILE)
+    time.sleep(0.7) # 等待保存
+    data = convert_to_numpy(DATA_FILE)
+    return data
