@@ -3,7 +3,7 @@ import xlrd
 import numpy as np
 import application.inference as inf
 
-# 本预测函数目前仅仅预测在训练集上面的正确率
+# 本预测目前仅仅预测在整个训练集上面的正确率
 # 使用的model为训练后供作测试的诸多models
 # 而不是最佳model, 最佳model存储在application/model，这个只有出现更优模型时才会被更改！
 
@@ -69,6 +69,7 @@ def get_info():
 
 if __name__ == "__main__":
     model_path = "../models/gr_model.ckpt" + '-' + str(STEP)
+    # model_path = "../application/model/gr_model.ckpt" + '-' + str(STEP)
     datas, labels = get_info()
     count = 0
     print(len(labels))
@@ -78,4 +79,4 @@ if __name__ == "__main__":
         print(labels[i])
         if out == labels[i]:
             count += 1
-    print('After %d steps training, the precision in the whole dataset is %g.' %(STEP, count/len(labels)))
+    print('After %d steps of training, the accuracy is %g.' %(STEP, count/len(labels)))
