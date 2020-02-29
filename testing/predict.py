@@ -9,16 +9,15 @@ import application.inference as inf
 
 DATASET_PATH = '../dataset/new/'
 SEQUENCE_LEN = 256
-STEP = 14001
+STEP = 26001
 
-type_map = {'right_to_left': 0,
-            'round': 1,
-            'croix': 2,
-            'down_to_up': 3,
+type_map = {'croix': 0,
+            'down_to_up': 1,
+            'right_to_left': 2,
+            'round': 3,
             'thunder': 4,
-            'infinity': 5,
-            'triangle': 6,
-            'turn' : 7}
+            'triangle': 5,
+            'turn': 6,}
 
 
 # 将存储数据的.xlsx文件转为(6, 256)手势序列numpy矩阵
@@ -72,11 +71,11 @@ if __name__ == "__main__":
     # model_path = "../application/model/gr_model.ckpt" + '-' + str(STEP)
     datas, labels = get_info()
     count = 0
-    print(len(labels))
+    assert len(labels) == 252
+    print("output @ label")
     for i in range(len(labels)):
         out = inf.run(datas[i], model_path)
-        print(out)
-        print(labels[i])
+        print(str(out) + "@" + str(labels[i]))
         if out == labels[i]:
             count += 1
     print('After %d steps of training, the accuracy is %g.' %(STEP, count/len(labels)))

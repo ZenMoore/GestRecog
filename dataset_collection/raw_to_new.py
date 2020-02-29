@@ -95,7 +95,10 @@ def trim_xls(raw_path, original_path):
     for dir in dirs:
         count_sequence = 0
         for file in os.listdir(raw_path + '{}'.format(dir)):
-            wb = openpyxl.load_workbook(raw_path + dir + '/' + file)
+            try:
+                wb = openpyxl.load_workbook(raw_path + dir + '/' + file)
+            except:
+                print(file) # 这里出现的问题是受损文件，即违规直接修改.txt后缀为.xlsx的文件
             sheet = wb.get_sheet_by_name(wb.sheetnames[0])
             sheet.delete_rows(1, 1) # intro
             sheet.delete_cols(1, 1) # adress
@@ -105,7 +108,7 @@ def trim_xls(raw_path, original_path):
             wb.save(original_path + dir + '/' + str(count_sequence) + '_' + dir + '.xlsx')
 
             # 下面代码发现运行途中，raw的表格中有几个存在空tuple，导致一系列问题
-            # if count_sequence == 23:
+            # if count_sequence == 13:
             #     print('error in raw: ' + dir + '/' + file)
             count_sequence += 1
             wb.close()

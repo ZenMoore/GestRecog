@@ -7,20 +7,19 @@ import itertools
 from random import shuffle
 
 NUM_EXAMPLES = forward.OUTPUT_NODE * 36
-# correspondence: 0:rond, 1:right-croix, 2:left-croix, 3:foudre, 4:..., 5:..., 6:..., 7:...
 
 LEARNING_RATE_BASE = 0.001
 # LEARNING_RATE_DECAY = 0.99
 # MOVING_AVERAGE_DECAY = 0.99
 REGULARIZATION_RATE = 0.0001
-TRAIN_STEPS = 20000 #todo use evaluation percentage threshold
+TRAIN_STEPS = 50000 # todo use evaluation percentage threshold
 
 MODEL_SAVE_PATH = '../models/'
 MODEL_NAME = 'gr_model.ckpt'
 
 DATASET_PATH = '../dataset/new/'
 
-SHUFFLE_BUFFER_SIZE = 10
+SHUFFLE_BUFFER_SIZE = 80
 
 batch_pos = 0
 
@@ -109,6 +108,8 @@ def get_dataset(path):
     for i in range(NUM_EXAMPLES):
         dataset.append((datas[i], labels[i]))
     shuffle(dataset)
+    shuffle(dataset)
+    shuffle(dataset) # todo 打乱三次，确保够乱
     return dataset
 
 def next_batch(dataset):
@@ -136,24 +137,21 @@ def train(dataset):
     data = tf.placeholder(dtype= tf.float32, shape= [None, forward.INPUT_NODE_HORIZONTAL, forward.INPUT_NODE_VERTICAL], name= 'data_input')
     label = tf.placeholder(dtype= tf.float32, shape= [None, forward.OUTPUT_NODE], name= 'label_input')
 
-    regularizer = tf.contrib.layers.l2_regularizer(REGULARIZATION_RATE)# todo 可以修改l1范数正则为l2范数
+    regularizer = tf.contrib.layers.l2_regularizer(REGULARIZATION_RATE)
     y = forward.inference(data, regularizer)
     global_step = tf.Variable(0, trainable= False)
 
-    print(y)
-    print(label)
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits= y, labels= tf.argmax(label, 1))
     cross_entropy_mean = tf.reduce_mean(cross_entropy)
-    print(cross_entropy_mean)
     loss = cross_entropy_mean + tf.add_n(tf.get_collection('losses'))
 
-    learning_rate = tf.train.cosine_decay_restarts(LEARNING_RATE_BASE, global_step, int(NUM_EXAMPLES/forward.BATCH_SIZE), t_mul= 2.0, m_mul= 1.0)# todo 可以尝试更换衰减模型
+    learning_rate = tf.train.cosine_decay_restarts(LEARNING_RATE_BASE, global_step, int(NUM_EXAMPLES/forward.BATCH_SIZE), t_mul= 2.0, m_mul= 1.0)
 
-    # variable_average = tf.train.ExponentialMovingAverage(MOVING_AVERAGE_DECAY, global_step)# todo 可以尝试更换滑动平均模型
+    # variable_average = tf.train.ExponentialMovingAverage(MOVING_AVERAGE_DECAY, global_step)
     # variable_average_op = variable_average.apply(tf.trainable_variables())
 
-    train_step = tf.train.AdamOptimizer(learning_rate).minimize(loss, global_step= global_step)# todo 可以尝试更换优化算法
-    with tf.control_dependencies([train_step]): # todo variable_average_op
+    train_step = tf.train.AdamOptimizer(learning_rate).minimize(loss, global_step= global_step)
+    with tf.control_dependencies([train_step]): # 之前有滑动平均，之后去掉了
         train_op = tf.no_op(name= 'train')
 
     saver = tf.train.Saver()
