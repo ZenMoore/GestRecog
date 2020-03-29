@@ -13,7 +13,7 @@ import application.send_to_demo as messenger
 #     preprocess.run(DATA_FILE)
 #
 
-model_path = "./model/gr_model.ckpt-14001"
+model_path = "./model/gr_model.ckpt-26001"
 
 type_map = {0: 'right_to_left',
             1: 'round',
@@ -48,4 +48,4 @@ if __name__ == '__main__':
     #         print("Gesture type is sent to Unity3D.")
     #     else:
     #         print("Gesture type send failed.")
-    print(type_map.get(inf.run(data, model_path)))
+    messenger.send(type_map.get(inf.run(data, model_path)))
