@@ -88,7 +88,6 @@ def intercept(sheet):
 
 
 # 将原始数据集中的数据进行精简，变成convert_to_numpy能够接受的大小
-# 不新建存储路径，仅修改原有文件
 def trim_xls(raw_path, original_path):
     dirs = os.listdir(raw_path)
 

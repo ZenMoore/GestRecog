@@ -94,10 +94,10 @@ def clear_invalid(sheet):
 
 # 返回 (6, 256) numpy 格式数据
 def get_info():
-    time.sleep(3) # 等待 data_gotten 获取数据结束
+    # time.sleep(3) # 等待 data_gotten 获取数据结束
     wb = openpyxl.load_workbook(ORIGINAL_PATH + DATA_FILE)
     sheet = wb.get_sheet_by_name(wb.sheetnames[0])
-    clear_invalid(sheet)
+    # clear_invalid(sheet)
     intercept(sheet)
     wb.save(ORIGINAL_PATH + DATA_FILE)
     time.sleep(0.7) # 等待保存

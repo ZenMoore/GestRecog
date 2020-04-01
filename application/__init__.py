@@ -1,7 +1,8 @@
 import preprocessing.core_preprocess as preprocess
 # import os
 # import application.receive_from_host as receiver
-import application.receive_from_xlsx as receiver
+# import application.receive_from_xlsx as receiver
+import application.reveive_from_tsv as receiver
 import numpy as np
 import application.inference as inf
 import application.send_to_demo as messenger
@@ -26,8 +27,8 @@ type_map = {0: 'right_to_left',
 
 # todo @author Louise: 将传入的 char[] raw 转换为 float[] 再转换为 float[6][256] 最后转换为 numpy
 # 返回 -1 表示解码失败
-def decode(raw):
-    return np.zeros(shape= [6, 256], dtype= np.float)
+# def decode(raw):
+#     return np.zeros(shape= [6, 256], dtype= np.float)
 
 
 if __name__ == '__main__':
@@ -36,6 +37,9 @@ if __name__ == '__main__':
     # data = decode(reveiver.get_mmap_info())
 
     # 从 .xlsx 文件中获取[6, 256]numpy数据
+    # data = receiver.get_info()
+
+    # 从 .tsv 文件中获取[6, 256]numpy数据
     data = receiver.get_info()
 
     # 数据预处理
